@@ -1,35 +1,28 @@
 #include <ps4.h>
 
-#include "config_struct.h"
 #include "offsets.h"
-
 #include "kpayloads.h"
 
 #include "kpayload.inc.c"
 
 #define KERNEL_BASE_FILE 0xFFFFFFFF82200000
 
-#define patch_macro(x)                                                                           \
-  kernel_base = &((uint8_t *)__readmsr(0xC0000082))[-K##x##_XFAST_SYSCALL];                      \
-  kernel_ptr = (uint8_t *)kernel_base;                                                           \
-  uart_patch = &kernel_ptr[K##x##_UART_PATCH];                                                   \
-  /* is_diag_process_patch = &kernel_ptr[K##x##_IS_DIAG_PROCESS_PATCH]; */                       \
-  /* allow_system_level_logging_patch = &kernel_ptr[K##x##_ALLOW_SYSTEM_LEVEL_LOGGING_PATCH]; */ \
-  /* allow_coredump_patch = &kernel_ptr[K##x##_ALLOW_COREDUMP_PATCH]; */                         \
-  copyin_patch_1 = &kernel_ptr[K##x##_COPYIN_PATCH_1];                                           \
-  copyin_patch_2 = &kernel_ptr[K##x##_COPYIN_PATCH_2];                                           \
-  copyout_patch_1 = &kernel_ptr[K##x##_COPYOUT_PATCH_1];                                         \
-  copyout_patch_2 = &kernel_ptr[K##x##_COPYOUT_PATCH_2];                                         \
-  copyinstr_patch_1 = &kernel_ptr[K##x##_COPYINSTR_PATCH_1];                                     \
-  copyinstr_patch_2 = &kernel_ptr[K##x##_COPYINSTR_PATCH_2];                                     \
-  copyinstr_patch_3 = &kernel_ptr[K##x##_COPYINSTR_PATCH_3];                                     \
-  setlogin_patch = &kernel_ptr[K##x##_SETLOGIN_PATCH];                                           \
-  pfs_signature_check_patch = &kernel_ptr[K##x##_PFS_SIGNATURE_CHECK_PATCH];                     \
-  debug_rif_patch_1 = &kernel_ptr[K##x##_DEBUG_RIF_PATCH_1];                                     \
-  debug_rif_patch_2 = &kernel_ptr[K##x##_DEBUG_RIF_PATCH_2];                                     \
-  debug_settings_error_patch_1 = &kernel_ptr[K##x##_DEBUG_SETTINGS_ERROR_PATCH_1];               \
-  debug_settings_error_patch_2 = &kernel_ptr[K##x##_DEBUG_SETTINGS_ERROR_PATCH_2];               \
-  /* mount_patch = &kernel_ptr[K##x##_MOUNT_PATCH]; */                                           \
+#define patch_macro(x)                                                             \
+  kernel_base = &((uint8_t *)__readmsr(0xC0000082))[-K##x##_XFAST_SYSCALL];        \
+  kernel_ptr = (uint8_t *)kernel_base;                                             \
+  copyin_patch_1 = &kernel_ptr[K##x##_COPYIN_PATCH_1];                             \
+  copyin_patch_2 = &kernel_ptr[K##x##_COPYIN_PATCH_2];                             \
+  copyout_patch_1 = &kernel_ptr[K##x##_COPYOUT_PATCH_1];                           \
+  copyout_patch_2 = &kernel_ptr[K##x##_COPYOUT_PATCH_2];                           \
+  copyinstr_patch_1 = &kernel_ptr[K##x##_COPYINSTR_PATCH_1];                       \
+  copyinstr_patch_2 = &kernel_ptr[K##x##_COPYINSTR_PATCH_2];                       \
+  copyinstr_patch_3 = &kernel_ptr[K##x##_COPYINSTR_PATCH_3];                       \
+  setlogin_patch = &kernel_ptr[K##x##_SETLOGIN_PATCH];                             \
+  pfs_signature_check_patch = &kernel_ptr[K##x##_PFS_SIGNATURE_CHECK_PATCH];       \
+  debug_rif_patch_1 = &kernel_ptr[K##x##_DEBUG_RIF_PATCH_1];                       \
+  debug_rif_patch_2 = &kernel_ptr[K##x##_DEBUG_RIF_PATCH_2];                       \
+  debug_settings_error_patch_1 = &kernel_ptr[K##x##_DEBUG_SETTINGS_ERROR_PATCH_1]; \
+  debug_settings_error_patch_2 = &kernel_ptr[K##x##_DEBUG_SETTINGS_ERROR_PATCH_2]; \
   depth_limit_patch = &kernel_ptr[K##x##_DEPTH_LIMIT_PATCH];
 
 #define install_macro(x)                                                    \
@@ -46,7 +39,6 @@ struct kpayload_payload_header {
 
 struct kpayload_payload_info {
   uint16_t fw_version;
-  struct configuration config;
   uint8_t *buffer;
   size_t size;
 };
@@ -56,9 +48,6 @@ struct kpayload_install_payload_args {
   struct kpayload_payload_info *kpayload_payload_info;
 };
 
-// Return 0 on success
-// Return -1 on unsupported firmware error
-// Can also just give a memory error in the browser or panic the console on failure
 static int kpayload_patches(struct thread *td, struct kpayload_firmware_args *args) {
   UNUSED(td);
   void *kernel_base;
@@ -68,10 +57,6 @@ static int kpayload_patches(struct thread *td, struct kpayload_firmware_args *ar
   uint8_t *kmem;
 
   // Pointers to be assigned in build_kpayload macro
-  uint8_t *uart_patch;
-  // uint8_t *is_diag_process_patch;
-  // uint8_t *allow_system_level_logging_patch;
-  // uint8_t *allow_coredump_patch;
   uint8_t *copyin_patch_1;
   uint8_t *copyin_patch_2;
   uint8_t *copyout_patch_1;
@@ -85,7 +70,6 @@ static int kpayload_patches(struct thread *td, struct kpayload_firmware_args *ar
   uint8_t *debug_rif_patch_2;
   uint8_t *debug_settings_error_patch_1;
   uint8_t *debug_settings_error_patch_2;
-  // uint8_t *mount_patch;
   uint8_t *depth_limit_patch;
 
   uint16_t fw_version = args->kpayload_firmware_info->fw_version;
@@ -96,37 +80,6 @@ static int kpayload_patches(struct thread *td, struct kpayload_firmware_args *ar
   // Disable write protection
   uint64_t cr0 = readCr0();
   writeCr0(cr0 & ~X86_CR0_WP);
-
-  // Enable UART
-  kmem = (uint8_t *)uart_patch;
-  kmem[0] = 0x00;
-
-  // sceSblACMgrIsDiagProcess
-  // kmem = (uint8_t *)is_diag_process_patch;
-  // kmem[0] = 0xB8;
-  // kmem[1] = 0x01;
-  // kmem[2] = 0x00;
-  // kmem[3] = 0x00;
-  // kmem[4] = 0x00;
-  // kmem[5] = 0xC3;
-
-  // sceSblACMgrIsAllowedSystemLevelDebugging
-  // kmem = (uint8_t *)allow_system_level_logging_patch;
-  // kmem[0] = 0xB8;
-  // kmem[1] = 0x01;
-  // kmem[2] = 0x00;
-  // kmem[3] = 0x00;
-  // kmem[4] = 0x00;
-  // kmem[5] = 0xC3;
-
-  // sceSblACMgrIsAllowedCoredump
-  // kmem = (uint8_t *)allow_coredump_patch;
-  // kmem[0] = 0xB8;
-  // kmem[1] = 0x01;
-  // kmem[2] = 0x00;
-  // kmem[3] = 0x00;
-  // kmem[4] = 0x00;
-  // kmem[5] = 0xC3;
 
   // Patch copyin/copyout/copyinstr to allow userland + kernel addresses in both params
   // copyin
@@ -203,11 +156,6 @@ static int kpayload_patches(struct thread *td, struct kpayload_firmware_args *ar
   kmem[2] = 0x00;
   kmem[3] = 0x00;
 
-  // Enable mount for unprivileged user
-  // kmem = (uint8_t *)mount_patch;
-  // kmem[0] = 0xEB;
-  // kmem[1] = 0x04;
-
   // Change directory depth limit from 9 to 64
   kmem = (uint8_t *)depth_limit_patch;
   kmem[0] = 0x40;
@@ -234,10 +182,6 @@ static uint64_t get_kernel_size(uint64_t kernel_base) {
   get_memory_dump2(kernel_base + 0x34, &elf_header_size, sizeof(uint16_t));
   get_memory_dump2(kernel_base + 0x34 + sizeof(uint16_t), &elf_header_entry_size, sizeof(uint16_t));
   get_memory_dump2(kernel_base + 0x34 + (sizeof(uint16_t) * 2), &num_of_elf_entries, sizeof(uint16_t));
-
-  // printf_debug("elf_header_size: %u bytes\n", elf_header_size);
-  // printf_debug("elf_header_entry_size: %u bytes\n", elf_header_entry_size);
-  // printf_debug("num_of_elf_entries: %u\n", num_of_elf_entries);
 
   uint64_t max = 0;
   for (int i = 0; i < num_of_elf_entries; i++) {
@@ -277,9 +221,6 @@ static uint64_t *u64_Scan(const void *module, uint64_t size_of_image, uint64_t v
   return 0;
 }
 
-// Return 0 on success
-// Return -1 on memory allocation error or unsupported firmware error
-// Can also just give a memory error in the browser or panic the console on failure
 static int kpayload_install_payload(struct thread *td, struct kpayload_install_payload_args *args) {
   UNUSED(td);
   void *kernel_base;
@@ -296,7 +237,6 @@ static int kpayload_install_payload(struct thread *td, struct kpayload_install_p
   void (*pmap_protect)(void *pmap, uint64_t sva, uint64_t eva, uint8_t pr);
 
   uint16_t fw_version = args->kpayload_payload_info->fw_version;
-  struct configuration config = args->kpayload_payload_info->config;
 
   // NOTE: This is a C preprocessor macro
   build_kpayload(fw_version, install_macro);
@@ -324,10 +264,6 @@ static int kpayload_install_payload(struct thread *td, struct kpayload_install_p
 
   struct kpayload_payload_header *payload_header = (struct kpayload_payload_header *)payload_data;
 
-  if (!payload_data || payload_size < sizeof(payload_header) || payload_header->signature != 0x5041594C4F414458ull) { // `payloadx`
-    return -1;
-  }
-
   // Disable write protection
   uint64_t cr0 = readCr0();
   writeCr0(cr0 & ~X86_CR0_WP);
@@ -346,10 +282,10 @@ static int kpayload_install_payload(struct thread *td, struct kpayload_install_p
   // Restore write protection
   writeCr0(cr0);
 
-  int (*payload_entrypoint)(uint16_t, struct configuration);
+  int (*payload_entrypoint)(uint16_t);
   *((void **)&payload_entrypoint) = (void *)(&payload_buffer[payload_header->entrypoint_offset]);
 
-  return payload_entrypoint(fw_version, config);
+  return payload_entrypoint(fw_version);
 }
 
 // HACK: Fix missing/bad/conflicting exploit patches for supported FWs
@@ -374,341 +310,7 @@ static int kpayload_exploit_fixes(struct thread *td, struct kpayload_firmware_ar
   uint64_t cr0 = readCr0();
   writeCr0(cr0 & ~X86_CR0_WP);
 
-  // TODO:
-  // 5.55, 5.56                   // ps4-ipv6-uaf
-  // 6.00, 6.02, 6.20, 6.50, 6.51 // ps4-ipv6-uaf
-  // 6.70, 6.71                   // ps4jb2, ps4-ipv6-uaf
-  if (fw_version == 474) {
-    // Fixes
-    //   - [X] PS4-5.05-Kernel-Exploit
-    //   - [X] ps4-ipv6-uaf
-
-    // Remove extra patch from ps4-ipv-uaf that provides more crash info
-    // TODO: We need to double check this and make sure we don't clobber a
-    // patch we make in `install_patches()`
-    kmem = (uint8_t *)&kernel_ptr[0x0073A6A0];
-    kmem[0] = 0x55;
-
-    // ChendoChap's patches from pOOBs4
-    kmem = (uint8_t *)&kernel_ptr[0x00149CCD]; // bcopy
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x00149C0D]; // bzero
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x00149C51]; // pagezero
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x00149D4D]; // memcpy
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x00149D91]; // pagecopy
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x00149F2D]; // copyin
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x0014A39D]; // copyinstr
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x0014A45D]; // copystr
-    kmem[0] = 0xEB;
-
-    // patch amd64_syscall() to allow calling syscalls everywhere
-    kmem = (uint8_t *)&kernel_ptr[0x003DD4B3];
-    kmem[0] = 0x00;
-    kmem[1] = 0x00;
-    kmem[2] = 0x00;
-    kmem[3] = 0x00;
-
-    kmem = (uint8_t *)&kernel_ptr[0x003DD4E5];
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x003DD4DC];
-    kmem[0] = 0xEB;
-    kmem[1] = 0x00;
-
-    kmem = (uint8_t *)&kernel_ptr[0x003DD4D1];
-    kmem[0] = 0x48;
-    kmem[1] = 0x3B;
-    kmem[2] = 0x90;
-    kmem[3] = 0xE0;
-    kmem[4] = 0x00;
-    kmem[5] = 0x00;
-    kmem[6] = 0x00;
-    kmem[7] = 0xEB;
-    kmem[8] = 0x00;
-
-    // repair sys_setuid() from exploit
-    kmem = (uint8_t *)&kernel_ptr[0x00113B73];
-    kmem[0] = 0xE8;
-    kmem[1] = 0xB8;
-    kmem[2] = 0x65;
-    kmem[3] = 0x13;
-
-    // patch sys_setuid() to allow freely changing the effective user ID
-    kmem = (uint8_t *)&kernel_ptr[0x00113B7E];
-    kmem[0] = 0xEB;
-
-    // patch vm_map_protect() (called by sys_mprotect()) to allow rwx mappings
-    kmem = (uint8_t *)&kernel_ptr[0x00397876];
-    kmem[0] = 0x38;
-    kmem[1] = 0xEA;
-    kmem[2] = 0x0F;
-    kmem[3] = 0x85;
-    kmem[4] = 0x00;
-    kmem[5] = 0x00;
-    kmem[6] = 0x00;
-    kmem[7] = 0x00;
-
-    // patch sys_dynlib_dlsym() to allow dynamic symbol resolution everywhere
-    kmem = (uint8_t *)&kernel_ptr[0x003D05AE];
-    kmem[0] = 0x90;
-    kmem[1] = 0xE9;
-    kmem[2] = 0x51;
-    kmem[3] = 0x03;
-    kmem[4] = 0x00;
-    kmem[5] = 0x00;
-    kmem[6] = 0x48;
-    kmem[7] = 0x8B;
-
-    kmem = (uint8_t *)&kernel_ptr[0x000686A0];
-    kmem[0] = 0x48;
-    kmem[1] = 0x31;
-    kmem[2] = 0xC0;
-    kmem[3] = 0xC3;
-    kmem[4] = 0x25;
-    kmem[5] = 0x00;
-    kmem[6] = 0x00;
-    kmem[7] = 0x00;
-
-    // patch sys_mmap() to allow rwx mappings
-    kmem = (uint8_t *)&kernel_ptr[0x001413A4];
-    kmem[0] = 0x37;
-
-    kmem = (uint8_t *)&kernel_ptr[0x001413A7];
-    kmem[0] = 0x37;
-  } else if (fw_version >= 500 && fw_version <= 501) {
-    // Fixes
-    //   - [X] PS4-5.05-Kernel-Exploit
-    //   - [X] ps4-ipv6-uaf
-
-    // Remove extra patch from ps4-ipv-uaf that provides more crash info
-    // TODO: We need to double check this and make sure we don't clobber a
-    // patch we make in `install_patches()`
-    kmem = (uint8_t *)&kernel_ptr[0x00766FE0];
-    kmem[0] = 0x55;
-
-    // ChendoChap's patches from pOOBs4
-    kmem = (uint8_t *)&kernel_ptr[0x00000ABD]; // bcopy
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x001EA36D]; // bzero
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x001EA3B1]; // pagezero
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x001EA42D]; // memcpy
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x001EA471]; // pagecopy
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x001EA60D]; // copyin
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x001EAA3D]; // copyinstr
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x001EAAFD]; // copystr
-    kmem[0] = 0xEB;
-
-    // patch amd64_syscall() to allow calling syscalls everywhere
-    kmem = (uint8_t *)&kernel_ptr[0x00000493];
-    kmem[0] = 0x00;
-    kmem[1] = 0x00;
-    kmem[2] = 0x00;
-    kmem[3] = 0x00;
-
-    kmem = (uint8_t *)&kernel_ptr[0x000004C5];
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x000004BC];
-    kmem[0] = 0xEB;
-    kmem[1] = 0x00;
-
-    kmem = (uint8_t *)&kernel_ptr[0x000004B1];
-    kmem[0] = 0x48;
-    kmem[1] = 0x3B;
-    kmem[2] = 0x90;
-    kmem[3] = 0xE0;
-    kmem[4] = 0x00;
-    kmem[5] = 0x00;
-    kmem[6] = 0x00;
-    kmem[7] = 0xEB;
-    kmem[8] = 0x00;
-
-    // repair sys_setuid() from exploit
-    kmem = (uint8_t *)&kernel_ptr[0x00054A72];
-    kmem[0] = 0xE8;
-    kmem[1] = 0xA9;
-    kmem[2] = 0xAD;
-    kmem[3] = 0x2A;
-
-    // patch sys_setuid() to allow freely changing the effective user ID
-    kmem = (uint8_t *)&kernel_ptr[0x00054A7D];
-    kmem[0] = 0xEB;
-
-    // patch vm_map_protect() (called by sys_mprotect()) to allow rwx mappings
-    kmem = (uint8_t *)&kernel_ptr[0x001A3AF6];
-    kmem[0] = 0x38;
-    kmem[1] = 0xFA;
-    kmem[2] = 0x0F;
-    kmem[3] = 0x85;
-    kmem[4] = 0x00;
-    kmem[5] = 0x00;
-    kmem[6] = 0x00;
-    kmem[7] = 0x00;
-
-    // patch sys_dynlib_dlsym() to allow dynamic symbol resolution everywhere
-    kmem = (uint8_t *)&kernel_ptr[0x00237E2A];
-    kmem[0] = 0x90;
-    kmem[1] = 0xE9;
-    kmem[2] = 0xC0;
-    kmem[3] = 0x01;
-    kmem[4] = 0x00;
-    kmem[5] = 0x00;
-    kmem[6] = 0x48;
-    kmem[7] = 0x8B;
-
-    kmem = (uint8_t *)&kernel_ptr[0x002B2350];
-    kmem[0] = 0x48;
-    kmem[1] = 0x31;
-    kmem[2] = 0xC0;
-    kmem[3] = 0xC3;
-    kmem[4] = 0x25;
-    kmem[5] = 0x00;
-    kmem[6] = 0x00;
-    kmem[7] = 0x00;
-
-    // patch sys_mmap() to allow rwx mappings
-    kmem = (uint8_t *)&kernel_ptr[0x0013D510];
-    kmem[0] = 0x37;
-
-    kmem = (uint8_t *)&kernel_ptr[0x0013D513];
-    kmem[0] = 0x37;
-  } else if (fw_version == 503) {
-    // Fixes
-    //   - [X] PS4-5.05-Kernel-Exploit
-    //   - [X] ps4-ipv6-uaf
-
-    // Remove extra patch from ps4-ipv-uaf that provides more crash info
-    // TODO: We need to double check this and make sure we don't clobber a
-    // patch we make in `install_patches()`
-    kmem = (uint8_t *)&kernel_ptr[0x007673A0];
-    kmem[0] = 0x55;
-
-    // ChendoChap's patches from pOOBs4
-    kmem = (uint8_t *)&kernel_ptr[0x00000ABD]; // bcopy
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x001EA47D]; // bzero
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x001EA4C1]; // pagezero
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x001EA53D]; // memcpy
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x001EA581]; // pagecopy
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x001EA71D]; // copyin
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x001EAB4D]; // copyinstr
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x001EAC0D]; // copystr
-    kmem[0] = 0xEB;
-
-    // patch amd64_syscall() to allow calling syscalls everywhere
-    kmem = (uint8_t *)&kernel_ptr[0x00000493];
-    kmem[0] = 0x00;
-    kmem[1] = 0x00;
-    kmem[2] = 0x00;
-    kmem[3] = 0x00;
-
-    kmem = (uint8_t *)&kernel_ptr[0x000004C5];
-    kmem[0] = 0xEB;
-
-    kmem = (uint8_t *)&kernel_ptr[0x000004BC];
-    kmem[0] = 0xEB;
-    kmem[1] = 0x00;
-
-    kmem = (uint8_t *)&kernel_ptr[0x000004B1];
-    kmem[0] = 0x48;
-    kmem[1] = 0x3B;
-    kmem[2] = 0x90;
-    kmem[3] = 0xE0;
-    kmem[4] = 0x00;
-    kmem[5] = 0x00;
-    kmem[6] = 0x00;
-    kmem[7] = 0xEB;
-    kmem[8] = 0x00;
-
-    // repair sys_setuid() from exploit
-    kmem = (uint8_t *)&kernel_ptr[0x00054A72];
-    kmem[0] = 0xE8;
-    kmem[1] = 0x39;
-    kmem[2] = 0xB1;
-    kmem[3] = 0x2A;
-
-    // patch sys_setuid() to allow freely changing the effective user ID
-    kmem = (uint8_t *)&kernel_ptr[0x00054A7D];
-    kmem[0] = 0xEB;
-
-    // patch vm_map_protect() (called by sys_mprotect()) to allow rwx mappings
-    kmem = (uint8_t *)&kernel_ptr[0x001A3C06];
-    kmem[0] = 0x38;
-    kmem[1] = 0xFA;
-    kmem[2] = 0x0F;
-    kmem[3] = 0x85;
-    kmem[4] = 0x00;
-    kmem[5] = 0x00;
-    kmem[6] = 0x00;
-    kmem[7] = 0x00;
-
-    // patch sys_dynlib_dlsym() to allow dynamic symbol resolution everywhere
-    kmem = (uint8_t *)&kernel_ptr[0x00237F3A];
-    kmem[0] = 0x90;
-    kmem[1] = 0xE9;
-    kmem[2] = 0xC0;
-    kmem[3] = 0x01;
-    kmem[4] = 0x00;
-    kmem[5] = 0x00;
-    kmem[6] = 0x48;
-    kmem[7] = 0x8B;
-
-    kmem = (uint8_t *)&kernel_ptr[0x002B2620];
-    kmem[0] = 0x48;
-    kmem[1] = 0x31;
-    kmem[2] = 0xC0;
-    kmem[3] = 0xC3;
-    kmem[4] = 0x25;
-    kmem[5] = 0x00;
-    kmem[6] = 0x00;
-    kmem[7] = 0x00;
-
-    // patch sys_mmap() to allow rwx mappings
-    kmem = (uint8_t *)&kernel_ptr[0x0013D620];
-    kmem[0] = 0x37;
-
-    kmem = (uint8_t *)&kernel_ptr[0x0013D623];
-    kmem[0] = 0x37;
-  } else if (fw_version >= 505 && fw_version <= 507) {
+  if (fw_version <= 507) {
     // Fixes
     //   - [X] PS4-5.05-Kernel-Exploit
     //   - [X] ps4-ipv6-uaf
@@ -2247,10 +1849,9 @@ int install_patches() {
 }
 
 // Passes on the result of kpayload_install_payload
-int install_payload(struct configuration *config) {
+int install_payload() {
   struct kpayload_payload_info kpayload_payload_info;
   kpayload_payload_info.fw_version = get_firmware();
-  kpayload_payload_info.config = *config;
   kpayload_payload_info.buffer = (uint8_t *)kpayload_bin;
   kpayload_payload_info.size = (size_t)kpayload_bin_len;
 
