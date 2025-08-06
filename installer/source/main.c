@@ -20,12 +20,11 @@ int _main(struct thread *td) {
   // Jailbreak the process
   jailbreak();
 
-  // Use temp file to prevent re-running HEN
+  // Check temp file to prevent re-running HEN
   if (file_exists(IS_LOADED_PATH)) {
     printf_notification("PS4HEN is already loaded!");
     return 0;
   }
-  touch_file(IS_LOADED_PATH);
 
   // Apply all HEN kernel patches
   install_patches();
@@ -33,11 +32,15 @@ int _main(struct thread *td) {
   exploit_fixes();
   mmap_patch();
 
-  block_updates();
   disable_aslr();
 
   // Install and run kpayload
   install_payload();
+
+  // Create temp file to prevent re-running HEN
+  touch_file(IS_LOADED_PATH);
+
+  block_updates();
 
   printf_notification("Welcome to PS4HEN Lite %s", VERSION);
 
