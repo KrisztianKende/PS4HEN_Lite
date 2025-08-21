@@ -5,9 +5,9 @@ ENTRY(_start)
 
 PHDRS
 {
-	payload_code_seg PT_LOAD FLAGS(5);  /* R+X */
-	payload_data_seg PT_LOAD FLAGS(6);  /* R+W */
-	bad_seg PT_LOAD FLAGS(6);           /* R+W */
+	payload_code_seg PT_LOAD FLAGS(5);
+	payload_data_seg PT_LOAD FLAGS(6);
+	bad_seg PT_LOAD FLAGS(6);
 }
 
 SECTIONS
