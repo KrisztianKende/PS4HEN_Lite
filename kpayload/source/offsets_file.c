@@ -6,10 +6,6 @@
 
 // clang-format off
 
-#include "offsets/474.h"
-#include "offsets/500.h"
-#include "offsets/501.h"
-#include "offsets/503.h"
 #include "offsets/505.h"
 #include "offsets/507.h"
 #include "offsets/550.h"
@@ -55,20 +51,11 @@
 #include "offsets/1250.h"
 #include "offsets/1252.h"
 #include "offsets/1300.h"
-#include "offsets/1302.h"
 
 // clang-format on
 
 PAYLOAD_CODE const struct kpayload_offsets *get_offsets_for_fw(uint16_t fw_version) {
   switch (fw_version) {
-  case 474:
-    return &offsets_474;
-  case 500:
-    return &offsets_500;
-  case 501:
-    return &offsets_501;
-  case 503:
-    return &offsets_503;
   case 505:
     return &offsets_505;
   case 507:
@@ -159,8 +146,6 @@ PAYLOAD_CODE const struct kpayload_offsets *get_offsets_for_fw(uint16_t fw_versi
     return &offsets_1252;
   case 1300:
     return &offsets_1300;
-  case 1302:
-    return &offsets_1302;
   default:
     return NULL;
   }

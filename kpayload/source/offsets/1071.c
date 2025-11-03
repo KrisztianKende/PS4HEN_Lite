@@ -7,8 +7,6 @@
 const struct kpayload_offsets offsets_1071 PAYLOAD_RDATA = {
   // data
   .XFAST_SYSCALL_addr              = 0x000001C0,
-  .PRISON0_addr                    = 0x0111B910,
-  .ROOTVNODE_addr                  = 0x01BF81F0,
   .M_TEMP_addr                     = 0x01A5FE30,
   .MINI_SYSCORE_SELF_BINARY_addr   = 0x01541E78,
   .ALLPROC_addr                    = 0x02269F30,
@@ -33,7 +31,6 @@ const struct kpayload_offsets offsets_1071 PAYLOAD_RDATA = {
   .memcpy_addr                     = 0x000D7370,
   .memset_addr                     = 0x0000D090,
   .strlen_addr                     = 0x00160DA0,
-  .printf_addr                     = 0x00450E80,
   .eventhandler_register_addr      = 0x000ED020,
 
   // Fself

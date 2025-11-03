@@ -31,7 +31,6 @@ const struct kpayload_offsets offsets_507 PAYLOAD_RDATA = {
   .memcpy_addr                     = 0x001EA530,
   .memset_addr                     = 0x003205C0,
   .strlen_addr                     = 0x003B71A0,
-  .printf_addr                     = 0x00436040,
   .eventhandler_register_addr      = 0x001EC400,
 
   // Fself

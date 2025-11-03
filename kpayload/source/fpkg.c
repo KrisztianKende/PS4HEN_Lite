@@ -377,8 +377,6 @@ PAYLOAD_CODE int my_sceSblKeymgrSmCallfunc_npdrm_decrypt_rif_new(union keymgr_pa
       goto err;
     }
 
-    // TODO: Sorry, I'm lazy to refactor this crappy code :D basically, we're copying decrypted data to proper place,
-    // consult with kernel code if offsets needs to be changed
     memcpy(response->decrypt_entire_rif.raw, request->decrypt_entire_rif.rif.digest, sizeof(request->decrypt_entire_rif.rif.digest) + sizeof(request->decrypt_entire_rif.rif.data));
     memset(response->decrypt_entire_rif.raw + sizeof(request->decrypt_entire_rif.rif.digest) + sizeof(request->decrypt_entire_rif.rif.data), '\0', sizeof(response->decrypt_entire_rif.raw) - (sizeof(request->decrypt_entire_rif.rif.digest) + sizeof(request->decrypt_entire_rif.rif.data)));
 
