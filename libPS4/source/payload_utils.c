@@ -110,6 +110,34 @@ uint16_t get_firmware() {
 
   uint16_t ret = atoi(string_fw); // Numerical representation of the firmware version. ex: 505 for 5.05, 702 for 7.02, etc
 
+  // Firmware versions with same offset values
+  switch (ret) {
+  case 507:
+    ret = 505;
+    break;
+  case 602:
+    ret = 600;
+    break;
+  case 671:
+    ret = 670;
+    break;
+  case 701:
+  case 702:
+    ret = 700;
+    break;
+  case 1071:
+    ret = 1070;
+    break;
+  case 1152:
+    ret = 1150;
+    break;
+  case 1202:
+    ret = 1200;
+    break;
+  case 1252:
+    ret = 1250;
+  }
+
   g_firmware = ret;
   return ret;
 }

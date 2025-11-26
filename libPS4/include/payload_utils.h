@@ -96,22 +96,17 @@ static inline __attribute__((always_inline)) void writeCr0(uint64_t cr0) {
 #define build_kpayload(id, macro) \
   switch (id) {                   \
     caseentry(505, macro);        \
-    caseentry(507, macro);        \
     caseentry(550, macro);        \
     caseentry(553, macro);        \
     caseentry(555, macro);        \
     caseentry(556, macro);        \
     caseentry(600, macro);        \
-    caseentry(602, macro);        \
     caseentry(620, macro);        \
     caseentry(650, macro);        \
     caseentry(651, macro);        \
     caseentry(670, macro);        \
-    caseentry(671, macro);        \
     caseentry(672, macro);        \
     caseentry(700, macro);        \
-    caseentry(701, macro);        \
-    caseentry(702, macro);        \
     caseentry(750, macro);        \
     caseentry(751, macro);        \
     caseentry(755, macro);        \
@@ -130,15 +125,11 @@ static inline __attribute__((always_inline)) void writeCr0(uint64_t cr0) {
     caseentry(1001, macro);       \
     caseentry(1050, macro);       \
     caseentry(1070, macro);       \
-    caseentry(1071, macro);       \
     caseentry(1100, macro);       \
     caseentry(1102, macro);       \
     caseentry(1150, macro);       \
-    caseentry(1152, macro);       \
     caseentry(1200, macro);       \
-    caseentry(1202, macro);       \
     caseentry(1250, macro);       \
-    caseentry(1252, macro);       \
     caseentry(1300, macro);       \
   default:                        \
     return -1;                    \

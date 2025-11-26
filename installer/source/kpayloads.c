@@ -169,7 +169,7 @@ static int kpayload_patches(struct thread *td, struct kpayload_firmware_args *ar
   kmem[0] = 0x40;
 
   // Fix missing/bad/conflicting exploit patches for supported FWs
-  if (fw_version <= 507) {
+  if (fw_version == 505) {
     // Remove extra patch from ps4-ipv-uaf that provides more crash info
     kmem = (uint8_t *)&kernel_ptr[0x007673E0];
     kmem[0] = 0x55;
@@ -620,7 +620,7 @@ static int kpayload_patches(struct thread *td, struct kpayload_firmware_args *ar
 
     kmem = (uint8_t *)&kernel_ptr[0x00240270];
     kmem[0] = 0x37;
-  } else if (fw_version == 600 || fw_version == 602) {
+  } else if (fw_version == 600) {
     // ChendoChap's patches from pOOBs4
     kmem = (uint8_t *)&kernel_ptr[0x00000ADD]; // bcopy
     kmem[0] = 0xEB;
@@ -884,7 +884,7 @@ static int kpayload_patches(struct thread *td, struct kpayload_firmware_args *ar
 
     kmem = (uint8_t *)&kernel_ptr[0x000AB57D];
     kmem[0] = 0x37;
-  } else if (fw_version >= 670 && fw_version <= 672) {
+  } else if (fw_version == 670 || fw_version == 672) {
     // ChendoChap's patches from pOOBs4
     kmem = (uint8_t *)&kernel_ptr[0x0063C8CE]; // veriPatch
     kmem[0] = 0xEB;
@@ -989,7 +989,7 @@ static int kpayload_patches(struct thread *td, struct kpayload_firmware_args *ar
 
     kmem = (uint8_t *)&kernel_ptr[0x000AB57D];
     kmem[0] = 0x37;
-  } else if (fw_version >= 700 && fw_version <= 702) {
+  } else if (fw_version == 700) {
     // Unpatch SysVeri from ps4-ipv6-uaf
     kmem = (uint8_t *)&kernel_ptr[0x0063A160];
     kmem[0] = 0x55;
@@ -1802,7 +1802,7 @@ static int kpayload_patches(struct thread *td, struct kpayload_firmware_args *ar
 
     kmem = (uint8_t *)&kernel_ptr[0x000ED59D];
     kmem[0] = 0x37;
-  } else if (fw_version >= 1050 && fw_version <= 1071) {
+  } else if (fw_version == 1050 || fw_version == 1070) {
     // Restore extra bytes from copyin, copyout, and copinstr (pppwn)
     kmem = (uint8_t *)&kernel_ptr[0x000D75C5];
     kmem[0] = 0xC7;

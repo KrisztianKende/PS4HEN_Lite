@@ -360,7 +360,7 @@ PAYLOAD_CODE int shellui_patch(void) {
   // enable remote play menu - credits to Aida
   // Varies per FW
   const char *remote_play_patch_data;
-  if (fw_version <= 507) {
+  if (fw_version == 505) {
     remote_play_patch_data = "\xE9\x82\x02\x00\x00";
   } else if (fw_version <= 620) {
     remote_play_patch_data = "\xE9\xB8\x02\x00\x00";
