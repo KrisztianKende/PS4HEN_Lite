@@ -18,7 +18,8 @@ CFLAGS       := -I$(IDIR) $(OPTIMIZATION) $(STANDARDS) $(WARNINGS) $(ARCH_FLAGS)
 LFLAGS	:= -Xlinker -T ./linker.x -Xlinker -Map=$(MAPFILE) -Wl,--build-id=none
 
 # Source files discovery
-CFILES	:= $(shell find $(SDIR) -name '*.c' -type f)
+OFFSETS_GEN := $(SDIR)/offsets_file.c
+CFILES	:= $(sort $(OFFSETS_GEN) $(filter-out $(SDIR)/offsets/%.c, $(shell find $(SDIR) -name '*.c' -type f)))
 OBJS	:= $(CFILES:$(SDIR)/%.c=$(ODIR)/%.o)
 DEPS	:= $(OBJS:.o=.d)
 
@@ -51,6 +52,9 @@ payload-include: $(TARGET)
 		exit 1;                                                                                                 \
 	fi
 	@echo "Payload include file generated: ../installer/source/kpayload.inc.c"
+
+$(OFFSETS_GEN): $(wildcard $(SDIR)/offsets/*.c) gen_offsets.py $(IDIR)/offsets.h
+	@python3 gen_offsets.py --header $(IDIR)/offsets.h --srcdir $(SDIR)/offsets --output $@
 
 # Compile source files with dependency generation
 $(ODIR)/%.o: $(SDIR)/%.c | $(ODIR)

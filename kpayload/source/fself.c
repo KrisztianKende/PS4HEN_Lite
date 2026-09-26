@@ -206,8 +206,6 @@ PAYLOAD_CODE static inline int build_self_auth_info_fake(struct self_context *ct
     }
 
     fake_auth_info.paid = ex_info->paid;
-
-    // TODO: overwrite low bits of PAID with title id number
   }
 
   if (auth_info) {
